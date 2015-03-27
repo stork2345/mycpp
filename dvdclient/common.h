@@ -23,6 +23,7 @@ public:
     double getMoney(void)const;
     void setMoney(double money);
 
+    void clear(void);
 private:
     char *m_name;
     char *m_password;
@@ -33,6 +34,7 @@ private:
 class DVD
 {
 public:
+    DVD();
     DVD(char *name,char *picfp,int price=0,int left=0);
     ~DVD();
     DVD(const DVD&);
@@ -49,6 +51,7 @@ public:
     int getLeft(void)const;
     void setLeft(int left);
 
+    friend bool operator<(const DVD& self,const DVD& other);
 private:
     char *m_name;
     char *m_picfp;
@@ -71,6 +74,8 @@ public:
     void setDay(int day);
 
     DATETIME& operator+=(int day);
+    int operator -(DATETIME&);
+    bool isempty(void);
     bool isleapyear(int year);
     void correcting(void);
     void chartodate(const char *date);
@@ -112,7 +117,6 @@ private:
     DATETIME m_ret;
     double m_money;
 };
-
 
 
 

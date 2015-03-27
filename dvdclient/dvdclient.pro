@@ -15,13 +15,23 @@ TEMPLATE = app
 SOURCES += main.cpp\
         dvdclient.cpp \
     common.cpp \
-    logwindow.cpp
+    logwindow.cpp \
+    recharge.cpp \
+    admin.cpp
 
 HEADERS  += dvdclient.h \
     common.h \
-    logwindow.h
+    logwindow.h \
+    recharge.h \
+    admin.h
 
 FORMS    += dvdclient.ui \
-    logwindow.ui
+    logwindow.ui \
+    recharge.ui \
+    admin.ui
 
 LIBS+=-lmysqlclient
+
+OTHER_FILES +=
+
+RESOURCES +=

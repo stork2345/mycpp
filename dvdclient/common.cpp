@@ -4,9 +4,13 @@
 using namespace std;
 
 #include <cstring>
+#include <cstdio>
 #include <ctime>
 #include <cstdlib>
+#include <QDebug>
+#include <mysql/mysql.h>
 
+extern MYSQL *conn;
 
 User::User()
 {
@@ -96,6 +100,27 @@ void User::setMoney(double money)
     m_money=money;
 }
 
+
+void User::clear(void)
+{
+    delete[] m_name;
+    m_name= new char[1];
+    delete[] m_password;
+    m_password= new char[1];
+    m_level=0;
+    m_money=0;
+}
+
+DVD::DVD()
+{
+    m_name=new char[1];
+    *m_name='\0';
+    m_picfp=new char[1];
+    *m_picfp='\0';
+    m_price=0;
+    m_left=0;
+}
+
  DVD::DVD(char *name,char *picfp,int price,int left)
  {
     m_name=new char[strlen(name)+1];
@@ -118,8 +143,8 @@ void User::setMoney(double money)
 
  DVD::DVD(const DVD& other)
  {
-     delete[] m_name;
-     delete[] m_picfp;
+     /*delete[] m_name;
+     delete[] m_picfp;*/
      m_name=new char[strlen(other.m_name)+1];
      memset(m_name,0,strlen(other.m_name)+1);
      strcpy(m_name,other.m_name);
@@ -173,6 +198,48 @@ void User::setMoney(double money)
  {
      m_left=left;
  }
+
+
+ bool operator<(const DVD& self,const DVD& other)
+ {
+     QString count_self;
+     QString count_other;
+     QString sql_cmd="select count(*) from history where DVDNAME= '"+QString(QLatin1String(self.m_name))+"';";
+     MYSQL_RES *res = NULL;
+     MYSQL_ROW row = NULL;
+     char*  ch=NULL;
+     QByteArray ba = sql_cmd.toLatin1();
+     ch=ba.data();
+
+     if(mysql_query(conn, ch))
+     {
+             printf("%s\n",mysql_error(conn));
+             exit(1);
+     }
+
+     res = mysql_use_result(conn);
+     while ((row = mysql_fetch_row(res)) != NULL)
+     {
+         count_self=row[0];
+     }
+
+     sql_cmd="select count(*) from history where DVDNAME= '"+QString(QLatin1String(other.m_name))+"';";
+     ba = sql_cmd.toLatin1();
+      ch=ba.data();
+      if(mysql_query(conn, ch))
+      {
+              printf("%s\n",mysql_error(conn));
+              exit(1);
+      }
+
+      res = mysql_use_result(conn);
+      while ((row = mysql_fetch_row(res)) != NULL)
+      {
+          count_other=row[0];
+      }
+      return (count_self.toInt()<count_other.toInt());
+ }
+
 
  DATETIME::DATETIME()
  {
@@ -242,26 +309,49 @@ void User::setMoney(double money)
              return *this;
          }
 
+        bool DATETIME::isempty(void)
+        {
+            if((m_year==0)||(m_month==0)||(m_day==0))
+            {
+                return true;
+            }
+            return false;
+        }
          void DATETIME::chartodate(const char *date)
          {
              char *datecpy=new char[strlen(date+1)];
              strcpy(datecpy,date);
              char *p=datecpy;
-             *(p+4)='\0';
-             *(p+7)='\0';
-             char *year=p;
-             char *month=p+5;
-             char *day=p+8;
-             m_year=atoi(year);
-             m_month=atoi(month);
-             m_day=atoi(day);
+             char *temp=p;
+             while((*p)!='-')
+             {
+                 p++;
+             }
+             *p='\0';
+             m_year=atoi(temp);
+             p++;
+             temp=p;
+
+             while((*p)!='-')
+             {
+                 p++;
+             }
+             *p='\0';
+            m_month=atoi(temp);
+            p++;
+            m_day=atoi(p);
+            delete[] datecpy;
          }
 
           char *DATETIME::datetochar(void)const
           {
-              QString year=(m_year);///////////////////////
-              QString month=m_month;
-              QString day=m_day;
+              char temp[8]={};
+              sprintf(temp,"%d",m_year);
+              QString year=temp;
+              sprintf(temp,"%d",m_month);
+              QString month=temp;
+              sprintf(temp,"%d",m_day);
+              QString day=temp;
               QString date=year+'-'+month+'-'+day+'\0';
               char*  ch=NULL;
               QByteArray ba = date.toLatin1();
@@ -314,8 +404,25 @@ void User::setMoney(double money)
                  }
      }
  }
-
-
+int DATETIME::operator -(DATETIME& other)
+{
+    int year=m_year-other.m_year;
+    int month=m_month-other.m_month;
+    int day=m_day-other.m_day;
+    qDebug()<<"m_day:"<<m_day<<"other.m_day:"<<other.m_day<<endl;
+    qDebug()<<"year:"<<year<<"month"<<month<<"day"<<day<<endl;
+    if(day<0)
+    {
+        month-=1;
+        day+=30;
+    }
+    if(month<0)
+    {
+        year-=1;
+        month+=12;
+    }
+    return (year*365+month*30+day);
+}
 
  History::History(char* dvdname,char*usrname,DATETIME start,DATETIME ret,double money)
  {
@@ -339,8 +446,17 @@ void User::setMoney(double money)
  }
  History::History(const History& other)
  {
-    setDvdname(other.m_dvdname);
-    setUsrname(other.m_usrname);
+    //setDvdname(other.m_dvdname);
+     m_dvdname=new char[strlen(other.m_dvdname)+1];
+     memset(m_dvdname,0,strlen(other.m_dvdname)+1);
+     strcpy(m_dvdname,other.m_dvdname);
+
+     m_usrname=new char[strlen(other.m_usrname)+1];
+     memset(m_usrname,0,strlen(other.m_usrname)+1);
+     strcpy(m_usrname,other.m_usrname);
+
+
+    //setUsrname(other.m_usrname);
     m_start=other.m_start;
     m_ret=other.m_ret;
     m_money=other.m_money;

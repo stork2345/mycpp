@@ -1,11 +1,14 @@
 #include "logwindow.h"
 #include "dvdclient.h"
 #include "ui_logwindow.h"
+#include "admin.h"
 
 #include <QtGui>
 #include <QDebug>
 
+dvdclient *mw;
 User user;
+logwindow *logw;
 
 logwindow::logwindow(QWidget *parent)
     :QDialog(parent),
@@ -13,6 +16,7 @@ logwindow::logwindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->Passline->setEchoMode(QLineEdit::Password);
+    logw=this;
 }
 
 logwindow::~logwindow()
@@ -45,7 +49,7 @@ void logwindow::on_Btn_signin_clicked()
        else
        {
            QString sql_cmd = "select * from users where (NAME,PASSWORD) =  ('"+name+"','"+pass+"');";
-           //  qDebug() << "sqlcmd" << sql_cmd <<endl;
+           //qDebug() << "sqlcmd" << sql_cmd <<endl;
            char*  ch=NULL;
            QByteArray ba = sql_cmd.toLatin1();
            ch=ba.data();
@@ -56,6 +60,7 @@ void logwindow::on_Btn_signin_clicked()
             }
 
            res = mysql_use_result(conn);
+
 
 
            while ((row = mysql_fetch_row(res)) != NULL)
@@ -71,10 +76,22 @@ void logwindow::on_Btn_signin_clicked()
            if(flag==1)
            {
                 flag=0;
-                dvdclient *mainwindow=new dvdclient;
-                mainwindow->show();
-                mainwindow->move((QApplication::desktop()->width() - mainwindow->width())/2,(QApplication::desktop()->height() - mainwindow->height())/2);
-                mainwindow->setFocus();
+                if(user.getLevel()!=10)
+                {
+                    dvdclient *mainwindow=new dvdclient;
+                    mainwindow->show();
+                    mainwindow->move((QApplication::desktop()->width() - mainwindow->width())/2,(QApplication::desktop()->height() - mainwindow->height())/2);
+                    mainwindow->setFocus();
+                    mw=mainwindow;
+
+                }
+                else
+                {
+                    admin *adminwindow=new admin;
+                    adminwindow->show();
+                    adminwindow->move((QApplication::desktop()->width() - adminwindow->width())/2,(QApplication::desktop()->height() - adminwindow->height())/2);
+                    adminwindow->setFocus();
+                }
                 this->close();
            }
            else
